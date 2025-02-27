@@ -1,10 +1,5 @@
 <template>
-  <div>
-    <el-breadcrumb separator-class="el-icon-arrow-right">
-      <el-breadcrumb-item v-for="item in location">{{ item }}</el-breadcrumb-item>
-    </el-breadcrumb>
-  </div>
-  <div>
+  <div class="user-dropdown-container">
     <el-dropdown split-button type="" @command="handle">
       {{ username }}
       <template #dropdown>
@@ -18,39 +13,79 @@
 </template>
 
 <script setup>
-import {onBeforeRouteUpdate, useRouter} from "vue-router";
-import {onMounted, ref} from "vue";
+import { onBeforeRouteUpdate, useRouter } from "vue-router";
+import { onMounted, ref } from "vue";
 import useStore from "@/store";
-import {storeToRefs} from "pinia";
-import {ElMessage} from "element-plus";
-const {user} = useStore();
-const {username} = storeToRefs(user);
-const router = useRouter()
-const emits = defineEmits(['changePassword'])
+import { storeToRefs } from "pinia";
+import { ElMessage } from "element-plus";
+import axios from "axios"; // 引入 axios
+
+const { user } = useStore();
+const { username } = storeToRefs(user);
+const router = useRouter();
+const emits = defineEmits(["changePassword"]);
+
 // 当前位置
-const location = ref([])
+const location = ref([]);
+
 // 注销登录
-const handle = (value) => {
-  console.log(value)
-  if (value === 'logout') {
+const handle = async (value) => {
+  if (value === "logout") {
+    // 清除用户信息和 Token
+    user.clearUser();
+
+    // 重置 axios 的请求头
+    delete axios.defaults.headers.common["Authorization"];
+
     ElMessage.success({
-      message: '注销成功，正在跳转至登录页！',
-      type: 'success',
-    })
-    window.localStorage.clear()
-    window.sessionStorage.clear()
-    router.replace('/login')
+      message: "注销成功，正在跳转至登录页！",
+      type: "success",
+    });
+
+    // 跳转到登录页
+    router.replace("/login");
+    // try {
+    //   // 调用登出接口
+    //   const token = localStorage.getItem("token"); // 假设 token 存储在 localStorage 中
+    //   await axios.post("/api/auth/logout", null, {
+    //     headers: {
+    //       Authorization: `Bearer ${token}`, // 将 token 放入请求头
+    //     },
+    //   });
+
+    //   // 清空本地存储
+    //   localStorage.clear();
+    //   sessionStorage.clear();
+
+    //   // 提示用户
+    //   ElMessage.success({
+    //     message: "注销成功，正在跳转至登录页！",
+    //     type: "success",
+    //   });
+
+    //   // 跳转到登录页
+    //   router.replace("/login");
+    // } catch (error) {
+    //   // 处理错误
+    //   ElMessage.error({
+    //     message: "注销失败，请重试！",
+    //     type: "error",
+    //   });
+    //   console.error("注销失败:", error);
+    // }
   } else {
-    emits('changePassword')
+    emits("changePassword");
   }
-}
+};
+
+
 onMounted(() => {
-  location.value = router.currentRoute.value.meta.location
-})
+  location.value = router.currentRoute.value.meta.location;
+});
+
 onBeforeRouteUpdate((to) => {
-  console.log(to.meta)
-  location.value = to.meta.location
-})
+  location.value = to.meta.location;
+});
 </script>
 
 <style scoped lang="scss">
@@ -60,5 +95,11 @@ div:nth-child(1) {
 
 div:nth-child(2) {
   width: 100px;
+}
+
+.user-dropdown-container {
+  position: absolute;
+  right: 10px; /* 距离右侧 10 像素，可根据需求调整 */
+  top: 10px; /* 距离顶部 10 像素，可根据需求调整 */
 }
 </style>

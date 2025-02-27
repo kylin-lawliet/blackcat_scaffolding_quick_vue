@@ -23,35 +23,43 @@
         <el-icon>
           <EditPen/>
         </el-icon>
-        <slot name="text">批量操作</slot>
+        <slot name="text">批量删除</slot>
       </el-button>
       <slot name="table-btn"></slot>
     </div>
     <el-table ref="tableRef" :data="props.data" border style="width: 100%" :default-sort="props.tableConfig.sort"
               max-height="700" @selection-change="handleSelectionChange">
       <el-table-column v-if="props.tableConfig.multiple" type="selection" width="55"/>
-      <el-table-column v-for="(item,index) in fieldConfig" :key="index"
-                       :prop="item.model" :label="item.label" :width="item.width?item.width:''"
-                       :sortable="item.sortable?item.sortable:true"
-                       align="center">
+
+      <el-table-column 
+        v-for="(item, index) in fieldConfig" 
+        :key="index"
+        :prop="item.model" 
+        :label="item.label" 
+        :width="item.width ? item.width : ''"
+        :sortable="item.sortable ? item.sortable : true"
+        align="center" 
+        >
+
         <template #default="scope" v-if="props.tagConfig.hasOwnProperty(item.model)">
           <el-tag :type="tagConfigFind(item.model, scope.row[item.model])['type']">
             {{ tagConfigFind(item.model, scope.row[item.model])['label'] }}
           </el-tag>
         </template>
       </el-table-column>
+
       <el-table-column label="操作" align="center" :width="props.tableConfig.width">
         <template #default="scope">
           <el-button v-if="props.tableConfig.show===true" size="small" type="success"
-                     @click="showClick(scope.row.id)">
+                     @click="showClick(scope.row[props.tableConfig.primaryKey])">
             查看
           </el-button>
           <el-button v-if="props.tableConfig.edit===true" size="small" type="primary"
-                     @click="editClick(scope.row.id)">
+                     @click="editClick(scope.row[props.tableConfig.primaryKey])">
             编辑
           </el-button>
           <el-popconfirm v-if="props.tableConfig.delete===true" title="确定要删除吗?"
-                         @confirm="deleteClick(scope.row.id)">
+                         @confirm="deleteClick(scope.row[props.tableConfig.primaryKey])">
             <template #reference>
               <el-button size="small" type="danger">删除</el-button>
             </template>
@@ -159,15 +167,17 @@ const props = defineProps({
 const fieldConfig = ref([])
 // 点击查看按钮事件
 const showClick = (value) => {
-  // console.log(value)
+  console.log("showClick",value)
   emits('submitShow', value)
 }
 // 点击编辑按钮事件
 const editClick = (value) => {
+  console.log("editClick",value)
   emits('submitEdit', value)
 }
 // 点击删除按钮事件
 const deleteClick = (value) => {
+  console.log("deleteClick",value)
   emits('submitDelete', value)
 }
 // 点击添加数据事件
@@ -248,13 +258,17 @@ const multipleClick = () => {
 // 批量多选元素列表
 const selectList = ref([])
 // 批量多选更新事件
+// const handleSelectionChange = (val) => {
+//   selectList.value = []
+//   for (let i in val) {
+//     selectList.value.unshift(val[i].id)
+//   }
+//   emits('submitMultiple', selectList.value)
+// }
 const handleSelectionChange = (val) => {
-  selectList.value = []
-  for (let i in val) {
-    selectList.value.unshift(val[i].id)
-  }
-  emits('submitMultiple', selectList.value)
-}
+  selectList.value = val.map(item => item[props.tableConfig.primaryKey]);
+  emits('submitMultiple', selectList.value);
+};
 // 改变分页大小
 const handleSizeChange = (val) => {
   emits('pageSize', val)
@@ -267,17 +281,17 @@ const handleCurrentChange = (val) => {
 }
 // 自定义标签正确显示内容
 const tagConfigFind = (tag, value) => {
-  if (value) {
-    // console.log(tag, value)
-    for (let i in props.tagConfig[tag]) {
-      // console.log(props.tagConfig[item][i])
-      if (value === props.tagConfig[tag][i]['value']) {
-        // console.log({'label': props.tagConfig[item][i]['label'], 'type': props.tagConfig[item][i]['type']})
-        return {'label': props.tagConfig[tag][i]['label'], 'type': props.tagConfig[tag][i]['type']}
-      }
-    }
+  // 防御性检查：确保 tag 存在且 value 有效
+  if (!tag || !value || !props.tagConfig[tag]) {
+    return { label: '未知', type: 'danger' }; // 返回默认值
   }
-}
+  // 遍历配置项
+  const foundItem = props.tagConfig[tag].find(item => item.value === value);
+  return foundItem 
+    ? { label: foundItem.label, type: foundItem.type || 'danger' } 
+    : { label: '未匹配', type: 'danger' };
+};
+
 const tableRef = ref(null)
 onMounted(() => {
   fieldConfig.value = props.fieldConfig.filter(item => {
@@ -301,5 +315,10 @@ onMounted(() => {
 .el-table {
   max-height: calc(100vh - 360px);
   overflow-y: auto;
+}
+::v-deep .el-table .el-table__body-wrapper .cell {
+  overflow: hidden !important; 
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
 }
 </style>

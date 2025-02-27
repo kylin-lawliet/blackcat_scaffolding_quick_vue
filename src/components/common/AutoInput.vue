@@ -3,12 +3,14 @@
       v-model="props.field"
       :fetch-suggestions="querySearch"
       popper-class="my-autocomplete"
-      placeholder="请输入用户名"
+      ref="autocomplete"
+      :placeholder="props.placeholder"
       clearable
   >
     <template #default="{ item }">
       <div class="value">{{ item.value }}</div>
     </template>
+
   </el-autocomplete>
 </template>
 
@@ -17,7 +19,7 @@ import {onMounted, ref} from 'vue'
 import Fuse from "fuse.js";
 import useStore from "@/store";
 import {storeToRefs} from "pinia";
-import {getDemo} from "@/api/home";
+import {excutAutoInputMethod} from "@/api/home";
 
 const {user} = useStore()
 const {id} = storeToRefs(user)
@@ -27,8 +29,17 @@ const props = defineProps({
     type: String,
     required: true,
     default: ""
+  },
+  autoInputMethod: {
+    type: String,
+    default: ""
+  },
+  placeholder: {
+    type: String,
+    default: ""
   }
 })
+
 const querySearch = (queryString, cb) => {
   if (queryString) {
     console.log(queryString)
@@ -45,17 +56,23 @@ const querySearch = (queryString, cb) => {
     cb(links.value)
   }
 }
+
+
 async function selectData() {
   let params = {'page': 1, 'size': 1000}
-  let data = await getDemo(params)
-  for (let i in data.results) {
-    links.value.push(
-        {
-          'value': data.results[i]['username'],
-          'account_id': data.results[i]['id']
-        }
-    )
-  }
+  if(props.autoInputMethod){
+    let data = await excutAutoInputMethod(props.autoInputMethod,params)
+    // 分页返回数据
+    const records=data.data.dataList
+    for (let i in records) {
+      links.value.push(
+          {
+            'value': records[i][props.field],
+            'id': records[i]['id']
+          }
+      )
+    }
+  } 
 }
 
 onMounted(() => {

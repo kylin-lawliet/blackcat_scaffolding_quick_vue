@@ -2,18 +2,32 @@ import {defineStore} from 'pinia'
 
 const useUserStore = defineStore('user', {
   state: () => ({
-    userid: '',
-    token: '',
-    username: '',
+    // userid: '',
+    // token: '',
+    // username: '',
+    userInfo: {},
+    token: localStorage.getItem("token") || "",
   }),
   // 修改数据
   actions: {
     // 更改用户信息
-    changeUser(value) {
-      this.userid = value['userid']
-      this.token = value['token']
-      this.username = value['username']
-    }
+    // changeUser(value) {
+    //   this.userid = value['userId']
+    //   this.token = value['token']
+    //   this.username = value['userName']
+    // }
+    // 保存用户信息和 Token
+    changeUser(data) {
+      this.userInfo = data.userInfo;
+      this.token = data.token;
+      localStorage.setItem("token", data.token);
+    },
+    // 清除用户信息和 Token
+    clearUser() {
+      this.userInfo = {};
+      this.token = "";
+      localStorage.removeItem("token");
+    },
   },
   // 持久化存储插件其他配置
   persist: {

@@ -12,7 +12,7 @@
         </el-select>
       </el-form-item>
       <el-form-item v-if="item.type==='auto-input'" :label="item.label">
-        <AutoInput :field="item.model" v-model="form[item.model]"></AutoInput>
+        <AutoInput :field="item.model" v-model="form[item.model]" :autoInputMethod="item.autoInputMethod" :placeholder="item.placeholder"></AutoInput>
       </el-form-item>
       <el-form-item v-if="item.type==='date'" :label="item.label">
         <el-date-picker v-model="form[item.model]" type="date" :placeholder="item.placeholder"/>
@@ -100,18 +100,20 @@ const reset = () => {
   dateTimeRange.value = ''
 }
 onMounted(() => {
-  // console.log(props.fieldConfig)
+  console.log("fieldConfig",props.fieldConfig)
   setTimeout(() => {
     fieldConfig.value = props.fieldConfig.filter(item => {
       return item.is_search
     })
     // 新增默认值
-    // console.log(fieldConfig)
+    console.log("fieldConfig")
+    console.log(fieldConfig)
     for (let j in fieldConfig.value) {
       if (fieldConfig.value[j].type === 'date') {
         // console.log(fieldConfig.value[j])
         form['date'] = new Date()
       }
+      // autoInputMethodValue=
     }
   }, 0)
 })

@@ -59,21 +59,17 @@ const closeDialog = () => {
   common.changeShowDialogVisible(false)
 }
 // 自定义标签正确显示内容
-const tagConfigFind = (item, value) => {
-  // console.log(item, value)
-  // nextTick(() => {
-  if (value) {
-    for (let i in props.tagConfig[item]) {
-      // console.log(props.tagConfig[item][i])
-      if (value === props.tagConfig[item][i]['value']) {
-        // console.log({'label': props.tagConfig[item][i]['label'], 'type': props.tagConfig[item][i]['type']})
-        return {'label': props.tagConfig[item][i]['label'], 'type': props.tagConfig[item][i]['type']}
-      }
-    }
-  } else {
-    return {'label': '', 'type': ''}
+const tagConfigFind = (tag, value) => {
+  // 防御性检查：确保 tag 存在且 value 有效
+  if (!tag || !value || !props.tagConfig[tag]) {
+    return { label: '未知', type: 'danger' }; // 返回默认值
   }
-}
+  // 遍历配置项
+  const foundItem = props.tagConfig[tag].find(item => item.value === value);
+  return foundItem 
+    ? { label: foundItem.label, type: foundItem.type || 'danger' } 
+    : { label: '未匹配', type: 'danger' };
+};
 
 onMounted(() => {
   // 生成配置项

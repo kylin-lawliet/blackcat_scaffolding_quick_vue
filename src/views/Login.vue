@@ -34,7 +34,7 @@
               <label class="ml-3 text-sm font-bold text-gray-700 tracking-wide">账号</label>
               <input
                   class="w-full  text-base  px-4  py-2  border-b border-gray-300  focus:outline-none  rounded-2xl  focus:border-indigo-500      "
-                  placeholder="请输入账号" v-model="loginForm.username">
+                  placeholder="请输入账号" v-model="loginForm.loginName">
             </div>
             <div class="mt-8 content-center">
               <label class="ml-3 text-sm font-bold text-gray-700 tracking-wide">密码</label>
@@ -68,30 +68,41 @@ const {token} = storeToRefs(user)
 const router = useRouter()
 // 登录表单
 const loginForm = reactive({
-  username: 'demo',
+  loginName: 'demo',
   password: '!QAZ3edc'
 })
-// 登录表单验证规则
+// 登录方法
 const login = () => {
-  postLogin(loginForm).then((response) => {
-    console.log(response)
-    user.changeUser(response)
-    ElMessage.success({
-      message: '登录成功，正在跳转至平台主页！',
-      type: 'success',
+  postLogin(loginForm)
+    .then((response) => {
+      if (response.code === 500) {
+        ElMessage.error(response.msg);
+        loginForm.password = "";
+      } else {
+        // 保存用户信息和 Token
+        user.changeUser(response.data);
+
+        // 将 Token 保存到 localStorage
+        localStorage.setItem("token", response.data.token);
+
+        // 设置 axios 的全局请求头
+        axios.defaults.headers.common["Authorization"] = `Bearer ${response.data.token}`;
+
+        ElMessage.success({
+          message: "登录成功，正在跳转至平台主页！",
+          type: "success",
+        });
+
+        // 跳转到主页
+        router.push("/index");
+      }
     })
-    router.push('/index')
-  }).catch(response => {
-    //发生错误时执行的代码
-    console.log(response)
-    if (response.status === 400){
-      ElMessage.error('账号或密码错误！')
-      loginForm.username = ''
-      loginForm.password = ''
-      user.reset()
-    }
-  });
-}
+    .catch((error) => {
+      console.error("登录失败:", error);
+      ElMessage.error("登录接口异常！");
+      loginForm.password = "";
+    });
+};
 </script>
 
 <style scoped lang="scss">

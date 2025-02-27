@@ -2,13 +2,13 @@
   <el-dialog
       v-model="editDialogVisible"
       title="编辑"
-      width="30%"
+      width="50%"
       :before-close="closeDialog"
   >
     <el-form ref="editFormRef" :model="form" :rules="rules" label-width="100px" :size="'large'">
         <span v-for="(item,index) in fieldConfig" :key="index">
           <el-form-item v-if="item.type==='text'" :label="item.label" :prop="item.model">
-            <el-input v-model="form[item.model]" :placeholder="item.placeholder"/>
+            <el-input v-model="form[item.model]" :placeholder="item.placeholder" type="textarea" autosize/>
           </el-form-item>
           <el-form-item v-if="item.type==='number'" :label="item.label" :prop="item.model">
             <el-input-number v-model="form[item.model]" controls-position="right" :precision="item.precision"
@@ -29,13 +29,16 @@
                             value-format="YYYY-MM-DD"/>
           </el-form-item>
           <el-form-item v-if="item.type==='select'" :label="item.label" :prop="item.model">
-            <el-select v-model="form[item.model]" :placeholder="item.placeholder">
+            <el-select v-model="form[item.model]" :placeholder="item.placeholder" @change="handleSelectChange(item, form[item.model],'edit')">
               <el-option v-for="(itemOption,indexOption) in selectOption[item.model]" :key="indexOption"
                          :label="itemOption.label" :value="itemOption.value"/>
             </el-select>
           </el-form-item>
            <el-form-item v-if="item.type==='auto-input'" :label="item.label" :prop="item.model">
-            <AutoInput :field="item.model" v-model="form[item.model]"></AutoInput>
+            <AutoInput :field="item.model" v-model="form[item.model]" :placeholder="item.placeholder"></AutoInput>
+          </el-form-item>
+          <el-form-item v-if="item.type==='editor'" :label="item.label" :prop="item.model">
+            <BasicEditor  v-model="form[item.model]" :placeholderText="item.placeholder"></BasicEditor>
           </el-form-item>
         </span>
     </el-form>
@@ -54,6 +57,7 @@ import {storeToRefs} from "pinia";
 import useStore from "@/store";
 import {ElMessage} from "element-plus";
 import AutoInput from "@/components/common/AutoInput.vue";
+import BasicEditor from '@/components/common/BasicEditor.vue';
 
 const {common} = useStore()
 
@@ -61,6 +65,9 @@ const {common} = useStore()
 const {editDialogVisible} = storeToRefs(common)
 const emits = defineEmits(['editData'])
 const props = defineProps({
+  components: {
+    BasicEditor,
+  },
   data: {
     type: Object,
     required: true,
@@ -108,6 +115,31 @@ const editData = async (editFormRef) => {
     }
   })
 }
+
+// 动态处理 select 的 change 事件
+const handleSelectChange = (field, value,type) => {
+  if (field.change && typeof field.change === 'function') {
+    field.change(value,type); // 调用 fieldConfig 中定义的 change 方法
+  }
+};
+
+
+// 修改表单信息方法
+const setFormField = (field, value) => {
+  console.log("修改字段:", field);
+  console.log("修改内容:", value);
+  if (field in form) {
+    form[field] = value; // 修改表单字段
+  } else {
+    console.error(`字段 ${field} 不存在于表单中`);
+  }
+};
+
+// 暴露表单数据和方法
+defineExpose({
+  form,
+  setFormField,
+});
 
 onMounted(() => {
   // 生成表单配置项

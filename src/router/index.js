@@ -30,6 +30,14 @@ const router = createRouter({
                     },
                 },
                 {
+                    path: 'user',
+                    name: 'user',
+                    component: () => import('@/views/User.vue'),
+                    meta: {
+                        title: '用户管理',
+                    },
+                },
+                {
                     path: 'demo',
                     name: 'demo',
                     component: () => import('@/views/Demo.vue'),

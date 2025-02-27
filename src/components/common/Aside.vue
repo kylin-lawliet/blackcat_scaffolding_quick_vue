@@ -18,6 +18,13 @@
       </el-icon>
       <template #title><span>首页</span></template>
     </el-menu-item>
+    <el-menu-item index="user" @click="router.push('/user')">
+      <el-icon>
+        <el-icon-user/>
+      </el-icon>
+      <template #title><span>用户管理</span></template>
+    </el-menu-item>
+
     <el-sub-menu index="2">
       <template #title>
         <el-icon>
