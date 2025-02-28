@@ -1,7 +1,7 @@
 <template>
   <div class="user-dropdown-container">
     <el-dropdown split-button type="" @command="handle">
-      {{ username }}
+      {{ userInfo.userName }}
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item command="password">修改密码</el-dropdown-item>
@@ -21,7 +21,7 @@ import { ElMessage } from "element-plus";
 import axios from "axios"; // 引入 axios
 
 const { user } = useStore();
-const { username } = storeToRefs(user);
+const { userInfo } = storeToRefs(user);
 const router = useRouter();
 const emits = defineEmits(["changePassword"]);
 
@@ -44,35 +44,6 @@ const handle = async (value) => {
 
     // 跳转到登录页
     router.replace("/login");
-    // try {
-    //   // 调用登出接口
-    //   const token = localStorage.getItem("token"); // 假设 token 存储在 localStorage 中
-    //   await axios.post("/api/auth/logout", null, {
-    //     headers: {
-    //       Authorization: `Bearer ${token}`, // 将 token 放入请求头
-    //     },
-    //   });
-
-    //   // 清空本地存储
-    //   localStorage.clear();
-    //   sessionStorage.clear();
-
-    //   // 提示用户
-    //   ElMessage.success({
-    //     message: "注销成功，正在跳转至登录页！",
-    //     type: "success",
-    //   });
-
-    //   // 跳转到登录页
-    //   router.replace("/login");
-    // } catch (error) {
-    //   // 处理错误
-    //   ElMessage.error({
-    //     message: "注销失败，请重试！",
-    //     type: "error",
-    //   });
-    //   console.error("注销失败:", error);
-    // }
   } else {
     emits("changePassword");
   }

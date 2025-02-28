@@ -63,6 +63,7 @@ import {ElMessage} from 'element-plus'
 import useStore from "@/store";
 import {postLogin} from "@/api/home";
 import {storeToRefs} from "pinia";
+import axios from 'axios'
 const {user} = useStore();
 const {token} = storeToRefs(user)
 const router = useRouter()

@@ -35,6 +35,17 @@ export default defineConfig({
     },
     server: {
         host: '0.0.0.0',
-        port: 3000
+        port: 3000,
+        proxy: {
+            '/api': {
+              target: 'http://localhost:8381',
+              changeOrigin: true,
+              rewrite: (path) => {
+                const newPath = path.replace(/^\/api/, '');
+                console.log(`Original path: ${path}, Rewritten path: ${newPath}`);
+                return newPath;
+              }
+            }
+        }
     }
 });

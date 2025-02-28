@@ -47,7 +47,7 @@ import {putChangePassword} from "@/api/home";
 import useStore from "@/store";
 
 const {user} = useStore()
-const {userid} = storeToRefs(user)
+const {userInfo} = storeToRefs(user)
 import {useRouter} from "vue-router";
 
 const router = useRouter()
@@ -90,20 +90,24 @@ const submitPassword = async (formRef) => {
         oldPassword: form.oldPassword,
         newPassword: form.newPassword1
       }
-      putChangePassword(userid.value, params).then((response) => {
+      putChangePassword(userInfo.value.userId, params).then((response) => {
         console.log(response)
-        ElMessage({
-          message: '密码修改成功，即将跳转至登录页！',
-          type: 'success',
-        })
-        setTimeout(function () {
-          router.replace('/login')
-        }, 1500)
+        if (response.code === 200) {
+            ElMessage({
+              message: '密码修改成功，即将跳转至登录页！',
+              type: 'success',
+            })
+            setTimeout(function () {
+              router.replace('/login')
+            }, 1500)
+        }else{
+          ElMessage.error(response.msg)
+        }
       }).catch(response => {
         //发生错误时执行的代码
         console.log(response)
-        if (response.status === 400) {
-          ElMessage.error(response.data.msg)
+        if (response.code != 200) {
+          ElMessage.error(response.msg)
         }
       })
     } else {

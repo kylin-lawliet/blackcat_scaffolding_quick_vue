@@ -6,44 +6,6 @@ import {storeToRefs} from "pinia";
 const {user} = useStore();
 const {token} = storeToRefs(user)
 
-// // 从 localStorage 中获取 Token
-// const token = localStorage.getItem("token");
-
-// // 如果 Token 存在，设置全局请求头
-// if (token) {
-//   axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-// }
-
-// // 请求拦截器
-// axios.interceptors.request.use(
-//   (config) => {
-//     // 每次请求前检查 Token 是否存在
-//     const token = localStorage.getItem("token");
-//     if (token) {
-//       config.headers.Authorization = `Bearer ${token}`;
-//     }
-//     return config;
-//   },
-//   (error) => {
-//     return Promise.reject(error);
-//   }
-// );
-
-// // 响应拦截器
-// axios.interceptors.response.use(
-//   (response) => {
-//     return response;
-//   },
-//   (error) => {
-//     // 处理 Token 过期或未授权的情况
-//     if (error.response.status === 401) {
-//       localStorage.removeItem("token");
-//       window.location.href = "/login"; // 跳转到登录页
-//     }
-//     return Promise.reject(error);
-//   }
-// );
-
 export function request(config) {
 	// 创建axios的实例
 	const instance = axios.create({
