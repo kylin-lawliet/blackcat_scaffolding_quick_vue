@@ -1,7 +1,7 @@
 <template>
   <Search :fieldConfig="fieldConfig" @submitSearch="submitSearch" :selectOption="selectOption">
   </Search>
-  <List :data="tableData" :fieldConfig="fieldConfig" :tableConfig="tableConfig" :templateFileUrl="templateFileUrl"
+  <List :data="tableData" :fieldConfig="fieldConfig" :tableConfig="tableConfig" :templateFileName="templateFileName"
         @pageSize="pageSize" @pageNumber="pageNumber" :tagConfig="tagConfig" @submitEdit="submitEdit"
         @submitShow="submitShow" @submitAdd="submitAdd" @submitDelete="submitDelete" @submitExport="submitExport"
         @submitImport="submitImport" @multipleClick="multipleClick" @submitMultiple="submitMultiple">
@@ -38,7 +38,7 @@ import Show from "@/components/table/Show.vue"
 import Add from "@/components/table/Add.vue"
 import {onMounted, reactive, ref} from "vue";
 import useStore from "@/store";
-import {objectDelete, selectPage, getOne, objectEdit,getAutoInputMethod,getTemplateFileUrl,getSex} from "@/api/home";
+import {objectDelete, selectPage, getOne, objectEdit,getAutoInputMethod,getSex} from "@/api/home";
 import {ElMessage} from "element-plus";
 import {exportFile} from "@/utils/excel";
 
@@ -50,8 +50,8 @@ const tableConfig = {
   'delete': true, // 是否删除
   'add': true, // 是否添加
   'show': true, // 是否查看详情
-  'export': false,//是否批量导出
-  'import': false,//是否批量导入
+  'export': true,//是否批量导出
+  'import': true,//是否批量导入
   'multiple': true,//是否多选
   'page': {enable: true, size: 10, number: 1, count: 0},//是否开启分页
   'sort': {prop: 'userId', order: 'ascending'}, // 是否默认排序
@@ -61,6 +61,9 @@ const tableConfig = {
   'otherTitle':'',// 详情中额外加载的模块名称
   'width': 195
 }
+
+// 批量导入模板文件名称，模板文件统一放在public/excelTemplate/目录下
+const templateFileName = "userTemplate.xlsx";
 
 // 表格字段配置
 const fieldConfig = ref([
@@ -108,7 +111,7 @@ const fieldConfig = ref([
     'is_edit': true,// 是否可以编辑修改
     'placeholder': '请输入登录密码', // 提示文字
     'is_required': true,// 编辑表单时，是否必填
-    'is_export': false, // 是否导出该字段
+    'is_export': true, // 是否导出该字段
   },
   {
     'type': 'select',// 表单类型
@@ -229,8 +232,6 @@ const submitShow = (value) => {
   operateId.value = value
   console.log(tableConfig.requestMapping)
   getOne(operateId.value,tableConfig.requestMapping).then((response) => {
-    // response['birthday'] = timeFormatConversion(response['birthday'], 'YYYY年MM月DD日')
-    // response['created_time'] = timeFormatConversion(response['created_time'], 'YYYY-MM-DD HH:mm:ss')
     Object.assign(operateForm, response.data)
   }).catch(response => {
     //发生错误时执行的代码
@@ -245,7 +246,7 @@ const submitEdit = (value) => {
   operateId.value = value
   getOne(operateId.value,tableConfig.requestMapping).then((response) => {
     console.log(response)
-    Object.assign(operateForm, response.data.data)
+    Object.assign(operateForm, response.data)
   }).catch(response => {
     //发生错误时执行的代码
     console.log(response)
@@ -321,20 +322,12 @@ const submitExport = () => {
       .map(({label, model}) => ({[model]: label}))
   // 处理数据结构
   selectPage(printParams,tableConfig.requestMapping).then((response) => {
-    console.log("response",response)
-    console.log("response.data",response.data)
-    // console.log(response.data.dataList)
     const export_data = response.data.dataList.map(obj => {
       const newObj = {};
       export_fields.forEach(field => {
         const [key, value] = Object.entries(field)[0];
-        // if (key === 'created_time') {
-        //   newObj[value] = timeFormatConversion((obj[key]), 'YYYY-MM-DD HH:mm:ss');
-        // } else {
           newObj[value] = obj[key];
-        // }
       });
-      // console.log(newObj)
       return newObj;
     });
     let filename = tableConfig.modelTitle
@@ -345,8 +338,6 @@ const submitExport = () => {
     ElMessage.error('获取列表数据失败！')
   });
 }
-// 批量导入模板文件下载地址
-const templateFileUrl = getTemplateFileUrl(tableConfig.requestMapping);
 
 // 数据批量导入
 const submitImport = (value) => {
@@ -448,12 +439,10 @@ const pageNumber = (value) => {
 // 获取列表数据
 function getTableData() {
   selectPage(params, tableConfig.requestMapping).then((response) => {
-    console.log('即将赋值给tableData的数据', response.data.dataList);
     tableData.value = response.data.dataList.map(({...item}) => ({
      ...item,
     }));
-    console.log('赋值后的tableData', tableData.value);
-    tableConfig.page.count = response.data.total;
+    tableConfig.page.count = response.data.totalCount;
   }).catch(response => {
     console.log(response);
     ElMessage.error('获取列表数据失败！')

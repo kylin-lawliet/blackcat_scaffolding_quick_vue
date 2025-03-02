@@ -19,6 +19,9 @@
             {{ tagConfigFind(item.model, props.data[item.model])['label'] }}
           </el-tag>
         </span>
+        <span v-else-if="item.type === 'editor'">
+          <div v-html="props.data[item.model]" class="formatted-text"></div>
+         </span>
         <span v-else>{{ props.data[item.model] }}</span>
       </el-descriptions-item>
     </el-descriptions>
@@ -60,12 +63,14 @@ const closeDialog = () => {
 }
 // 自定义标签正确显示内容
 const tagConfigFind = (tag, value) => {
+  console.log('tag:', tag, 'value:', value);
   // 防御性检查：确保 tag 存在且 value 有效
   if (!tag || !value || !props.tagConfig[tag]) {
     return { label: '未知', type: 'danger' }; // 返回默认值
   }
   // 遍历配置项
   const foundItem = props.tagConfig[tag].find(item => item.value === value);
+  console.log('foundItem:', foundItem);
   return foundItem 
     ? { label: foundItem.label, type: foundItem.type || 'danger' } 
     : { label: '未匹配', type: 'danger' };
@@ -81,5 +86,8 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-
+.formatted-text {
+  white-space: pre-line; /* 保留换行符 */
+  word-wrap: break-word; /* 自动换行 */
+}
 </style>

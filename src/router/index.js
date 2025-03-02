@@ -38,17 +38,17 @@ const router = createRouter({
                     },
                 },
                 {
-                    path: 'demo',
-                    name: 'demo',
-                    component: () => import('@/views/Demo.vue'),
+                    path: 'form',
+                    name: 'form',
+                    component: () => import('@/views/Form.vue'),
                     meta: {
                         title: '演示页面',
                         location: ['示例页', '演示页面'],
                     },
                 },
                 {
-                    path: 'tables',
-                    name: 'tables',
+                    path: 'demo',
+                    name: 'demo',
                     component: () => import('@/views/Tables.vue'),
                     meta: {
                         title: '演示表格',
@@ -56,13 +56,6 @@ const router = createRouter({
                     },
                 }
             ]
-        },
-        {
-            path: '/test',
-            component: () => import('@/views/Test.vue'),
-            meta: {
-                title: '测试',
-            }
         }
     ]
 })

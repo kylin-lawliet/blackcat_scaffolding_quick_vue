@@ -47,16 +47,6 @@ export function getAutoInputMethod(type){
     return '/' + type + '/selectPage';
 }
 
-// 导入模板文件下载地址
-export function getTemplateFileUrl(type){
-    let methodName = "";
-    if(type=="user"){
-        // methodName = 'https://api.cuiliangblog.cn/static/demo-template.xlsx';
-        methodName = import.meta.env.VITE_APP_TEMPLATE_URL + 'user.xlsx'
-    }
-    return methodName;
-}
-
 // 组装下拉框值
 export function getSex(){
     const value= [

@@ -123,6 +123,7 @@ import {onMounted, ref} from "vue";
 import {Download, EditPen, Plus, Upload, Document, DocumentAdd, Tickets, UploadFilled} from "@element-plus/icons-vue"
 import {ElMessage} from "element-plus";
 import {importFile} from "@/utils/excel";
+import axios from 'axios';
 
 const emits = defineEmits(['submitShow', 'submitDelete', 'submitEdit', 'submitAdd', 'submitExport',
   'submitImport', 'multipleClick', 'submitMultiple', 'pageSize', 'pageNumber', 'submitCode'])
@@ -142,7 +143,7 @@ const props = defineProps({
     required: false,
     default: {}
   },// tag标签显示配置
-  templateFileUrl: {
+  templateFileName: {
     type: String,
     required: false,
     default: ''
@@ -223,9 +224,35 @@ const cancelClick = () => {
   uploadDialogVisible.value = false
 }
 // 下载模板文件
-const downloadTemplate = () => {
-  window.open(props.templateFileUrl)
-}
+const downloadTemplate = async () => { // 将函数标记为 async
+  try {
+    const response = await axios.get('/excelTemplate/'+props.templateFileName, {
+      responseType: 'blob', // 指定响应类型为 blob
+      headers: {
+        'Cache-Control': 'no-cache', // 禁用缓存
+        'Pragma': 'no-cache'
+      }
+    });
+
+    // 创建 Blob 对象
+    const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+    // 创建下载链接
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', props.templateFileName); // 设置下载文件名
+    document.body.appendChild(link);
+    link.click(); // 触发下载
+    document.body.removeChild(link); // 移除链接
+
+    // 释放 Blob URL
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('下载失败', error);
+    ElMessage.error('下载模板文件失败，请稍后重试');
+  }
+};
 // 上传数据内容
 const uploadData = ref([])
 // 上传数据字段

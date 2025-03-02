@@ -32,9 +32,8 @@
         </el-icon>
         <span>示例页</span>
       </template>
-      <el-menu-item index="demo" @click="router.push('/demo')">演示页面</el-menu-item>
-      <el-menu-item index="tables" @click="router.push('/tables')">演示表格</el-menu-item>
-      <el-menu-item index="test" @click="router.push('/test')">测试页</el-menu-item>
+      <el-menu-item index="form" @click="router.push('/form')">演示页面</el-menu-item>
+      <el-menu-item index="demo" @click="router.push('/demo')">演示表格</el-menu-item>
     </el-sub-menu>
   </el-menu>
 </template>

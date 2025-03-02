@@ -1,24 +1,17 @@
 <template>
   <Search :fieldConfig="fieldConfig" @submitSearch="submitSearch" :selectOption="selectOption">
-    <template #search-item>
-      <el-form-item label="身高范围">
-        <el-input-number v-model="heightForm.height_min" :min="150"/>
-        <span class="range-icon"><el-icon><SemiSelect/></el-icon></span>
-        <el-input-number v-model="heightForm.height_max" :max="200"/>
-      </el-form-item>
-    </template>
   </Search>
-  <List :data="tableData" :fieldConfig="fieldConfig" :tableConfig="tableConfig" :templateFileUrl="templateFileUrl"
+  <List :data="tableData" :fieldConfig="fieldConfig" :tableConfig="tableConfig" :templateFileName="templateFileName"
         @pageSize="pageSize" @pageNumber="pageNumber" :tagConfig="tagConfig" @submitEdit="submitEdit"
         @submitShow="submitShow" @submitAdd="submitAdd" @submitDelete="submitDelete" @submitExport="submitExport"
         @submitImport="submitImport" @multipleClick="multipleClick" @submitMultiple="submitMultiple">
   </List>
-  <Show :data="operateForm" :fieldConfig="fieldConfig" :tagConfig="tagConfig"></Show>
+  <Show :data="operateForm" :fieldConfig="fieldConfig" :tagConfig="tagConfig" :otherConfig="otherConfig" :otherData="otherData" :otherFieldConfig="otherFieldConfig"></Show>
   <Edit :data="operateForm" :fieldConfig="fieldConfig" @editData="editData" :selectOption="selectOption"></Edit>
   <Add :fieldConfig="fieldConfig" @addData="addData" :selectOption="selectOption"></Add>
   <el-dialog
       v-model="multipleDialogVisible"
-      title="批量操作数据"
+      title="批量删除数据"
       width="40%"
   >
     <el-form label-width="120px">
@@ -29,7 +22,7 @@
     <template #footer>
       <span class="dialog-footer">
         <el-button @click="multipleDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="multipleDialogVisible = false">
+        <el-button type="primary" @click="multiplDelete">
           确定
         </el-button>
       </span>
@@ -45,13 +38,34 @@ import Show from "@/components/table/Show.vue"
 import Add from "@/components/table/Add.vue"
 import {onMounted, reactive, ref} from "vue";
 import useStore from "@/store";
-import {deleteDemo, getDemo, getDemoInfo, getSelect, postDemo, putDemo} from "@/api/home";
+import {objectDelete, selectPage, getOne, objectEdit,getAutoInputMethod,getSex} from "@/api/home";
 import {ElMessage} from "element-plus";
-import {timeFormatConversion} from "@/utils/timeFormat";
-import {SemiSelect} from "@element-plus/icons-vue";
 import {exportFile} from "@/utils/excel";
+import {timeFormatConversion} from "@/utils/timeFormat";
 
 const {common} = useStore()
+
+// 操作配置
+const tableConfig = {
+  'edit': true, // 是否编辑
+  'delete': true, // 是否删除
+  'add': true, // 是否添加
+  'show': true, // 是否查看详情
+  'export': false,//是否批量导出
+  'import': false,//是否批量导入
+  'multiple': true,//是否多选
+  'page': {enable: true, size: 10, number: 1, count: 0},//是否开启分页
+  'sort': {prop: 'id', order: 'ascending'}, // 是否默认排序
+  'requestMapping':'dome',// controller 定义名称
+  'modelTitle':'示例',// 模块的名称
+  'primaryKey': 'id', // 指定主键字段名
+  'otherTitle':'',// 详情中额外加载的模块名称
+  'width': 195
+}
+
+// 批量导入模板文件名称，模板文件统一放在public/excelTemplate/目录下
+const templateFileName = "userTemplate.xlsx";
+
 // 表格字段配置
 const fieldConfig = ref([
   {
@@ -59,140 +73,131 @@ const fieldConfig = ref([
     'model': 'id',// 字段名
     'is_table_show': true,// 是否在表格显示
     'width': 65,
-    'is_export': true,// 是否导出该字段
+    'is_export': false,// 是否导出该字段
   },
   {
     'type': 'auto-input',// 表单类型
-    'label': '用户名', // 标签
-    'model': 'username',// 字段名
+    'label': '用户名称', // 标签
+    'model': 'userName',// 字段名
+    'autoInputMethod':getAutoInputMethod(tableConfig.requestMapping),// 输入框实时加载数据,空表示不查询
     'is_table_show': true,// 是否在表格显示
     'is_info_show': true,// 是否在详情显示
     'is_search': true,// 是否可搜索，如果是false，不用填写placeholder
     'is_edit': true,// 是否可以编辑修改
-    'placeholder': '请输入用户名', // 提示文字
+    'placeholder': '请输入用户名称', // 提示文字
     'is_required': true,// 编辑表单时，是否必填
     'is_export': true, // 是否导出该字段
-  },
-  {
-    'type': 'select',// 表单类型
-    'label': '省份', // 标签
-    'model': 'province',// 字段名
-    'is_table_show': true,// 是否在表格显示
-    'is_info_show': true,// 是否在详情显示
-    'is_export': true // 是否导出该字段
-  },
-  {
-    'type': 'select',// 表单类型
-    'label': '省份ID', // 标签
-    'model': 'province_id',// 字段名
-    'is_search': true,// 是否可搜索，如果是false，不用填写placeholder
-    'is_edit': true,// 是否可以编辑修改
-    'placeholder': '请选择省份', // 提示文字
-    'is_required': true,// 编辑表单时，是否必填
+    'width': 160,
   },
   {
     'type': 'select',// 表单类型
     'label': '性别', // 标签
     'model': 'sex',// 字段名
-    'is_search': true,// 是否可搜索，如果是false，不用填写placeholder
+    'autoInputMethod':'',// 输入框实时加载数据,空表示不查询
     'is_table_show': true,// 是否在表格显示
-    'is_edit': true,// 是否可以编辑修改
     'is_info_show': true,// 是否在详情显示
+    'is_search': false,// 是否可搜索，如果是false，不用填写placeholder
+    'is_edit': true,// 是否可以编辑修改
     'placeholder': '请选择性别', // 提示文字
-  },
-  {
-    'label': '性别', // 标签
-    'model': 'sex_name',// 字段名
-    'is_export': true // 是否导出该字段
-  },
-  {
-    'type': 'date',// 表单类型
-    'label': '生日', // 标签
-    'model': 'birthday',// 字段名
-    'is_table_show': true,// 是否在表格显示
-    'is_info_show': true,// 是否在详情显示
-    'is_edit': true,// 是否可以编辑修改
-    'placeholder': '请选择生日', // 提示文字
-    'width': 135,
-    'is_export': true, // 是否导出该字段
+    'is_required': true,// 编辑表单时，是否必填
+    'is_export': false, // 是否导出该字段
+    'width': 80,
   },
   {
     'type': 'number',// 表单类型
-    'label': '身高(cm)', // 标签
-    'model': 'height',// 字段名
+    'label': '年龄', // 标签
+    'model': 'age',// 字段名
     'precision': 0,//精度
+    'autoInputMethod':'',// 输入框实时加载数据,空表示不查询
     'is_table_show': true,// 是否在表格显示
     'is_info_show': true,// 是否在详情显示
+    'is_search': false,// 是否可搜索，如果是false，不用填写placeholder
     'is_edit': true,// 是否可以编辑修改
-    'placeholder': '请输入身高', // 提示文字
+    'placeholder': '请输入年龄', // 提示文字
+    'is_required': false,// 编辑表单时，是否必填
     'is_export': true, // 是否导出该字段
+    'width': 80,
   },
   {
     'type': 'number',// 表单类型
-    'label': '体重(kg)', // 标签
+    'label': '体重', // 标签
     'model': 'weight',// 字段名
     'precision': 2,//精度
+    'autoInputMethod':'',// 输入框实时加载数据,空表示不查询
     'is_table_show': true,// 是否在表格显示
     'is_info_show': true,// 是否在详情显示
+    'is_search': false,// 是否可搜索，如果是false，不用填写placeholder
     'is_edit': true,// 是否可以编辑修改
     'placeholder': '请输入体重', // 提示文字
-    'is_export': true,// 是否导出该字段
+    'is_required': false,// 编辑表单时，是否必填
+    'is_export': true, // 是否导出该字段
+    'width': 80,
   },
   {
     'type': 'datetime',// 表单类型
-    'label': '注册时间', // 标签
-    'model': 'created_time',// 字段名
-    'is_search': true,
+    'label': '创建日期', // 标签
+    'model': 'createTime',// 字段名
+    'autoInputMethod':'',// 输入框实时加载数据,空表示不查询
     'is_table_show': true,// 是否在表格显示
     'is_info_show': true,// 是否在详情显示
-    'is_edit': true,// 是否可以编辑修改
-    'placeholder': '请选择注册时间', // 提示文字
+    'is_search': false,// 是否可搜索，如果是false，不用填写placeholder
+    'is_edit': false,// 是否可以编辑修改
+    'placeholder': '', // 提示文字
+    'is_required': false,// 编辑表单时，是否必填
     'is_export': true, // 是否导出该字段
-    'width': 170
+    'width': 200,
+  }, {
+    'type': 'datetime',// 表单类型
+    'label': '生日', // 标签
+    'model': 'birthday',// 字段名
+    'autoInputMethod':'',// 输入框实时加载数据,空表示不查询
+    'is_table_show': true,// 是否在表格显示
+    'is_info_show': true,// 是否在详情显示
+    'is_search': false,// 是否可搜索，如果是false，不用填写placeholder
+    'is_edit': true,// 是否可以编辑修改
+    'placeholder': '请选择生日', // 提示文字
+    'is_required': true,// 编辑表单时，是否必填
+    'is_export': true, // 是否导出该字段
+    'width': 200,
   },
   {
-    'type': 'text',// 表单类型
-    'label': '个人介绍', // 标签
-    'model': 'introduction',// 字段名
+    'type': 'editor',// 表单类型
+    'label': '备注', // 标签
+    'model': 'remark',// 字段名
+    'autoInputMethod':'',// 输入框实时加载数据,空表示不查询
+    'is_table_show': true,// 是否在表格显示
     'is_info_show': true,// 是否在详情显示
+    'is_search': false,// 是否可搜索，如果是false，不用填写placeholder
     'is_edit': true,// 是否可以编辑修改
-    'placeholder': '请输入个人介绍', // 提示文字
-    'is_export': true,// 是否导出该字段
+    'placeholder': '请输入备注', // 提示文字
+    'is_required': false,// 编辑表单时，是否必填
+    'is_export': true, // 是否导出该字段
   }
 ])
 // 标签显示配置
 const tagConfig = reactive({
-  'sex': [
-    {
-      'value': "1", // 字段值
-      'label': '男', // 显示名
-      'type': 'danger' // 样式
-    },
-    {
-      'value': "2", // 字段值
-      'label': '女', // 显示名
-      'type': 'warning' // 样式
-    }
-  ]
+  'sex': getSex()
 })
+
 // 下拉框选择项,结构为{'字段名':[{'label':'X','value':'Y'}]}
 const selectOption = reactive({
-  'province_id': [],
-  'sex': [{'label': '男', 'value': '1'}, {'label': '女', 'value': '2'}]
+  'sex': getSex()
 })
-// 操作配置
-const tableConfig = {
-  'edit': true, // 是否编辑
-  'delete': true, // 是否删除
-  'add': true, // 是否添加
-  'show': true, // 是否查看详情
-  'export': true,//是否批量导出
-  'import': true,//是否批量导入
-  'multiple': true,//是否多选
-  'page': {enable: true, size: 10, number: 1, count: 0},//是否开启分页
-  'sort': {prop: 'id', order: 'ascending'}, // 是否默认排序
-  'width': 195
+
+
+
+const otherConfig={
+  'title': tableConfig.otherTitle, // 详情中加载的其他信息标题
+  'show': false // 是否
 }
+const otherFieldConfig=[ {
+    'label': 'ID', // 标签
+    'model': 'id',// 字段名
+    'is_table_show': true,// 是否在表格显示
+    'width': 65
+  }
+]
+const otherData = ref([])
 
 // 表格数据
 const tableData = ref([])
@@ -219,13 +224,10 @@ let operateForm = reactive({})
 const operateId = ref('')
 // 表格查看事件
 const submitShow = (value) => {
-  console.log(value)
   operateId.value = value
-  getDemoInfo(operateId.value).then((response) => {
-    console.log(response)
-    response['birthday'] = timeFormatConversion(response['birthday'], 'YYYY年MM月DD日')
-    response['created_time'] = timeFormatConversion(response['created_time'], 'YYYY-MM-DD HH:mm:ss')
-    Object.assign(operateForm, response)
+  getOne(operateId.value,tableConfig.requestMapping).then((response) => {
+    response.data['birthday'] = timeFormatConversion(response.data['birthday'], 'YYYY年MM月DD日')
+    Object.assign(operateForm, response.data)
   }).catch(response => {
     //发生错误时执行的代码
     console.log(response)
@@ -237,9 +239,9 @@ const submitShow = (value) => {
 const submitEdit = (value) => {
   console.log(value)
   operateId.value = value
-  getDemoInfo(operateId.value).then((response) => {
+  getOne(operateId.value,tableConfig.requestMapping).then((response) => {
     console.log(response)
-    Object.assign(operateForm, response)
+    Object.assign(operateForm, response.data)
   }).catch(response => {
     //发生错误时执行的代码
     console.log(response)
@@ -250,8 +252,7 @@ const submitEdit = (value) => {
 // 表格保存事件
 const editData = (value) => {
   console.log(value)
-  putDemo(operateId.value, value).then((response) => {
-    console.log(response)
+  objectEdit(value,tableConfig.requestMapping).then((response) => {
     getTableData()
     ElMessage({
       message: '修改信息成功！',
@@ -271,7 +272,7 @@ const submitAdd = () => {
 // 表格新增保存事件
 const addData = (value) => {
   console.log(value)
-  postDemo(value).then((response) => {
+  objectEdit(value,tableConfig.requestMapping).then((response) => {
     console.log(response)
     getTableData()
     ElMessage({
@@ -286,7 +287,7 @@ const addData = (value) => {
 }
 // 删除数据
 const submitDelete = (value) => {
-  deleteDemo(value).then((response) => {
+  objectDelete(value,tableConfig.requestMapping).then((response) => {
     console.log(response)
     getTableData()
     ElMessage({
@@ -315,21 +316,23 @@ const submitExport = () => {
       .filter(obj => obj['is_export'])
       .map(({label, model}) => ({[model]: label}))
   // 处理数据结构
-  getDemo(printParams).then((response) => {
-    // console.log(response.results)
-    const export_data = response.results.map(obj => {
+  selectPage(printParams,tableConfig.requestMapping).then((response) => {
+    // console.log(response.data.dataList)
+    const export_data = response.data.dataList.map(obj => {
       const newObj = {};
       export_fields.forEach(field => {
         const [key, value] = Object.entries(field)[0];
-        if (key === 'created_time') {
-          newObj[value] = timeFormatConversion((obj[key]), 'YYYY-MM-DD HH:mm:ss');
-        } else {
+        // 如果后端日期没有转换可放开注释
+        // if (key === 'created_time') {
+        //   newObj[value] = timeFormatConversion((obj[key]), 'YYYY-MM-DD HH:mm:ss');
+        // } else {
           newObj[value] = obj[key];
-        }
+        // }
       });
+      // console.log(newObj)
       return newObj;
     });
-    let filename = '示例用户'
+    let filename = tableConfig.modelTitle
     exportFile(export_data, filename);
   }).catch(response => {
     //发生错误时执行的代码
@@ -337,9 +340,7 @@ const submitExport = () => {
     ElMessage.error('获取列表数据失败！')
   });
 }
-// 批量导入模板文件下载地址
-// const templateFileUrl = import.meta.env.VITE_APP_TEMPLATE_URL + 'selfEmployed.xlsx'
-const templateFileUrl = 'https://api.cuiliangblog.cn/static/demo-template.xlsx'
+
 // 数据批量导入
 const submitImport = (value) => {
   console.log(value)
@@ -359,7 +360,7 @@ const submitImport = (value) => {
   result.forEach((item, index) => {
     console.log(item, index)
     setTimeout(() => {
-      postDemo(item).then((response) => {
+      objectEdit(item,tableConfig.requestMapping).then((response) => {
         console.log(response)
         ElMessage({
           message: `成功插入第${parseInt(index) + 1}条数据！`,
@@ -378,6 +379,34 @@ const submitImport = (value) => {
 }
 // 批量多选弹窗显示
 const multipleDialogVisible = ref(false)
+
+// 批量多选确定按钮事件
+const multiplDelete = () => {
+  console.log(multipleList.value)
+  let flag=true;
+  for (let i in multipleList.value) {
+    objectDelete(multipleList.value[i],tableConfig.requestMapping).then((response) => {
+
+    }).catch(response => {
+      //发生错误时执行的代码
+      flag=false;
+    });
+  }
+  if(flag){
+    ElMessage({
+      message: '删除数据成功！',
+      type: 'success',
+    })
+  }else{
+    ElMessage({
+      message: '删除数据失败！',
+      type: 'success',
+    })
+  }
+  getTableData()
+  multipleDialogVisible.value = false
+}
+
 // 批量多选点击事件
 const multipleClick = () => {
   multipleDialogVisible.value = true
@@ -411,39 +440,20 @@ const pageNumber = (value) => {
 
 // 获取列表数据
 function getTableData() {
-  getDemo(params).then((response) => {
-    console.log(response)
-    tableConfig.page.count = response.count
-    tableData.value = response.results.map(({birthday, created_time, ...item}) => ({
-      ...item,
-      birthday: timeFormatConversion(birthday, 'YYYY年MM月DD日'),
-      created_time: timeFormatConversion(created_time, 'YYYY-MM-DD HH:mm:ss')
-    }))
+  selectPage(params, tableConfig.requestMapping).then((response) => {
+    tableData.value = response.data.dataList.map(({birthday, ...item}) => ({
+     ...item,
+     birthday: timeFormatConversion(birthday, 'YYYY年MM月DD日'),
+    }));
+    tableConfig.page.count = response.data.totalCount;
   }).catch(response => {
-    //发生错误时执行的代码
-    console.log(response)
-    ElMessage.error('获取列表数据失败！')
-  });
-}
-
-// 获取下拉选择框数据
-function getSelectData() {
-  getSelect({'size': 100, 'page': 1}).then((response) => {
-    console.log(response)
-    for (let i in response.results) {
-      selectOption.province_id.push({'label': response.results[i].name, 'value': response.results[i].id})
-    }
-    console.log(selectOption)
-  }).catch(response => {
-    //发生错误时执行的代码
-    console.log(response)
+    console.log(response);
     ElMessage.error('获取列表数据失败！')
   });
 }
 
 onMounted(() => {
-  getTableData()
-  getSelectData()
+  getTableData();
 })
 </script>
 
