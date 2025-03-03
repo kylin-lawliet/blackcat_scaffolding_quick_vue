@@ -155,8 +155,7 @@ defineExpose({
 
 onMounted(() => {
   fieldConfig.value = props.fieldConfig.filter(item => item.is_edit);
-  console.log("可编辑的字段配置:", fieldConfig.value); // 调试输出
-
+  // console.log("可编辑的字段配置:", fieldConfig.value); // 调试输出
   // 初始化 form 对象
   for (const item of fieldConfig.value) {
     if (!form[item.model]) {

@@ -32,7 +32,6 @@
 import {onMounted, ref} from "vue";
 import {storeToRefs} from "pinia";
 import useStore from "@/store";
-import {ElMessage} from "element-plus";
 
 const {common} = useStore()
 
@@ -63,13 +62,14 @@ const closeDialog = () => {
 }
 // 自定义标签正确显示内容
 const tagConfigFind = (tag, value) => {
+  console.log('props.tagConfig:', props.tagConfig);
   console.log('tag:', tag, 'value:', value);
   // 防御性检查：确保 tag 存在且 value 有效
   if (!tag || !value || !props.tagConfig[tag]) {
     return { label: '未知', type: 'danger' }; // 返回默认值
   }
   // 遍历配置项
-  const foundItem = props.tagConfig[tag].find(item => item.value === value);
+  const foundItem = props.tagConfig[tag].find(item => item.value == value);
   console.log('foundItem:', foundItem);
   return foundItem 
     ? { label: foundItem.label, type: foundItem.type || 'danger' } 

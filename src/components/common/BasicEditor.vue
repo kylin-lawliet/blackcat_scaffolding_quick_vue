@@ -127,4 +127,7 @@ const customPaste = (editor, event, callback) => {
   console.log('ClipboardEvent 粘贴事件对象', event)
   callback(true) // 继续默认的粘贴行为
 }
+
+// 定义 mode 变量
+const mode = ref('default')
 </script>

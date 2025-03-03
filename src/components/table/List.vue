@@ -308,14 +308,17 @@ const handleCurrentChange = (val) => {
 }
 // 自定义标签正确显示内容
 const tagConfigFind = (tag, value) => {
+  // console.log("props.tagConfig",props.tagConfig)
+  // console.log("tagConfigFind-tag",tag)
+  // console.log("tagConfigFind-value",value)
   // 防御性检查：确保 tag 存在且 value 有效
   if (!tag || !value || !props.tagConfig[tag]) {
     return { label: '未知', type: 'danger' }; // 返回默认值
   }
   // 遍历配置项
-  const foundItem = props.tagConfig[tag].find(item => item.value === value);
+  const foundItem = props.tagConfig[tag].find(item => item.value == value); 
   return foundItem 
-    ? { label: foundItem.label, type: foundItem.type || 'danger' } 
+    ? { label: foundItem.label, type: foundItem.type || 'success' } 
     : { label: '未匹配', type: 'danger' };
 };
 

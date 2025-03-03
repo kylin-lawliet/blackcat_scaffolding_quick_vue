@@ -64,7 +64,16 @@ export function getSex(){
     return value;
 }
 
-
+// 获取部门数据
+export function selectDeptList(params) {
+    const url ='/dome/selectDeptList';
+    return index.get(url, params)
+}
+// 获取职位数据
+export function selectPositionList(params) {
+    const url ='/dome/selectPositionList';
+    return index.get(url, params)
+}
 
 // // 发送put请求
 // export function putDemo(id, params) {

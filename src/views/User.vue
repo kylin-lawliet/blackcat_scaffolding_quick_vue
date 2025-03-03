@@ -7,8 +7,8 @@
         @submitImport="submitImport" @multipleClick="multipleClick" @submitMultiple="submitMultiple">
   </List>
   <Show :data="operateForm" :fieldConfig="fieldConfig" :tagConfig="tagConfig" :otherConfig="otherConfig" :otherData="otherData" :otherFieldConfig="otherFieldConfig"></Show>
-  <Edit :data="operateForm" :fieldConfig="fieldConfig" @editData="editData" :selectOption="selectOption"></Edit>
-  <Add :fieldConfig="fieldConfig" @addData="addData" :selectOption="selectOption"></Add>
+  <Edit :data="operateForm" :fieldConfig="fieldConfig" @editData="editData" :selectOption="selectOption" ref="editComponent"></Edit>
+  <Add :fieldConfig="fieldConfig" @addData="addData" :selectOption="selectOption" ref="addComponent"></Add>
   <el-dialog
       v-model="multipleDialogVisible"
       title="批量删除数据"

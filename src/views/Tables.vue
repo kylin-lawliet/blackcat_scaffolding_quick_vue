@@ -7,8 +7,8 @@
         @submitImport="submitImport" @multipleClick="multipleClick" @submitMultiple="submitMultiple">
   </List>
   <Show :data="operateForm" :fieldConfig="fieldConfig" :tagConfig="tagConfig" :otherConfig="otherConfig" :otherData="otherData" :otherFieldConfig="otherFieldConfig"></Show>
-  <Edit :data="operateForm" :fieldConfig="fieldConfig" @editData="editData" :selectOption="selectOption"></Edit>
-  <Add :fieldConfig="fieldConfig" @addData="addData" :selectOption="selectOption"></Add>
+  <Edit :data="operateForm" :fieldConfig="fieldConfig" @editData="editData" :selectOption="selectOption" ref="editComponent"></Edit>
+  <Add :fieldConfig="fieldConfig" @addData="addData" :selectOption="selectOption" ref="addComponent"></Add>
   <el-dialog
       v-model="multipleDialogVisible"
       title="批量删除数据"
@@ -38,7 +38,7 @@ import Show from "@/components/table/Show.vue"
 import Add from "@/components/table/Add.vue"
 import {onMounted, reactive, ref} from "vue";
 import useStore from "@/store";
-import {objectDelete, selectPage, getOne, objectEdit,getAutoInputMethod,getSex} from "@/api/home";
+import {objectDelete, selectPage, getOne, objectEdit,getAutoInputMethod,getSex,selectDeptList,selectPositionList} from "@/api/home";
 import {ElMessage} from "element-plus";
 import {exportFile} from "@/utils/excel";
 import {timeFormatConversion} from "@/utils/timeFormat";
@@ -65,6 +65,83 @@ const tableConfig = {
 
 // 批量导入模板文件名称，模板文件统一放在public/excelTemplate/目录下
 const templateFileName = "userTemplate.xlsx";
+
+// 需要绑定事件表单数据
+const formData = reactive({
+  deptId: null
+});
+const addComponent = ref(null);
+const editComponent = ref(null);
+
+// 定义事件处理方法
+const onDeptIdChange = (value,type) => {
+  console.log("value changed:", value);
+  console.log("type:", type);
+  formData.deptId = value; // 新增赋值
+  selectOption.serviceId = []; 
+  positionList(null,type);
+};
+
+// 数据库获取下拉框内容
+const deptList = () => {
+  selectDeptList().then((response) => {
+    // console.log("selectDeptList",response)
+    const result=response.data;
+    // console.log("result",result)
+    const  deptId=[];
+    for (let i in result) {
+      // console.log("result[i]",result[i])
+      // console.log("result[i].dept_name",result[i].dept_name)
+      deptId.push({
+          label:result[i].dept_name,
+          value:String(result[i].id),
+          type:'warning'
+      });
+    }
+    selectOption.deptId=deptId;
+    tagConfig.deptId=deptId;
+  }).catch(response => {
+    //发生错误时执行的代码
+    console.log(response)
+    ElMessage.error('获取数据失败！')
+  });
+}
+
+// 下拉框值表动加载，下拉框绑定方法要在字段信息定义之前
+function positionList(load,type){
+  console.log("load",load)
+  console.log("type",type)
+  // 列表加载时联动参数为空
+  if(load){
+    formData.deptId=null;
+  }
+  // 编辑变动是清空联动下拉框数据
+  if(type=='edit'){
+    editComponent.value.setFormField('positionId', null);
+  }else if(type=='add'){
+    addComponent.value.setFormField('positionId', null);
+  }
+  selectPositionList(formData).then((response) => {
+    const result=response.data;
+    const  positionId=[];
+    for (let i in result) {
+      positionId.push({
+          label:result[i].position_name,
+          value:String(result[i].id),
+          type:'warning'
+      });
+    }
+    selectOption.positionId=positionId;
+    // 级联变动是，不修改列表的tag显示
+    if(load){
+      tagConfig.positionId=positionId;
+    }
+  }).catch(response => {
+    //发生错误时执行的代码
+    console.log(response)
+    ElMessage.error('获取数据失败！')
+  });
+}
 
 // 表格字段配置
 const fieldConfig = ref([
@@ -145,8 +222,9 @@ const fieldConfig = ref([
     'placeholder': '', // 提示文字
     'is_required': false,// 编辑表单时，是否必填
     'is_export': true, // 是否导出该字段
-    'width': 200,
-  }, {
+    'width': 180,
+  }, 
+  {
     'type': 'datetime',// 表单类型
     'label': '生日', // 标签
     'model': 'birthday',// 字段名
@@ -158,7 +236,36 @@ const fieldConfig = ref([
     'placeholder': '请选择生日', // 提示文字
     'is_required': true,// 编辑表单时，是否必填
     'is_export': true, // 是否导出该字段
-    'width': 200,
+    'width': 140,
+  },
+  {
+    'type': 'select',// 表单类型
+    'label': '部门', // 标签
+    'model': 'deptId',// 字段名
+    'autoInputMethod':'',// 输入框实时加载数据,空表示不查询
+    'is_table_show': true,// 是否在表格显示
+    'is_info_show': true,// 是否在详情显示
+    'is_search': false,// 是否可搜索，如果是false，不用填写placeholder
+    'is_edit': true,// 是否可以编辑修改
+    'placeholder': '请选择部门', // 提示文字
+    'is_required': true,// 编辑表单时，是否必填
+    'is_export': true, // 是否导出该字段
+    'width': 120,
+    'change': onDeptIdChange, // 绑定点击事件
+  },
+  {
+    'type': 'select',// 表单类型
+    'label': '职位', // 标签
+    'model': 'positionId',// 字段名
+    'autoInputMethod':'',// 输入框实时加载数据,空表示不查询
+    'is_table_show': true,// 是否在表格显示
+    'is_info_show': true,// 是否在详情显示
+    'is_search': false,// 是否可搜索，如果是false，不用填写placeholder
+    'is_edit': true,// 是否可以编辑修改
+    'placeholder': '请选择职位', // 提示文字
+    'is_required': true,// 编辑表单时，是否必填
+    'is_export': true, // 是否导出该字段
+    'width': 120,
   },
   {
     'type': 'editor',// 表单类型
@@ -176,12 +283,16 @@ const fieldConfig = ref([
 ])
 // 标签显示配置
 const tagConfig = reactive({
-  'sex': getSex()
+  'sex': getSex(),
+  'deptId':[],
+  'positionId':[]
 })
 
 // 下拉框选择项,结构为{'字段名':[{'label':'X','value':'Y'}]}
 const selectOption = reactive({
-  'sex': getSex()
+  'sex': getSex(),
+  'deptId':[],
+  'positionId':[]
 })
 
 
@@ -240,13 +351,17 @@ const submitEdit = (value) => {
   console.log(value)
   operateId.value = value
   getOne(operateId.value,tableConfig.requestMapping).then((response) => {
-    console.log(response)
+    // console.log(response)
+    // 进入编辑页时，加载级联的下拉框数据
+    formData.deptId=response.data.deptId;
+    positionList(false,null);
     Object.assign(operateForm, response.data)
   }).catch(response => {
     //发生错误时执行的代码
     console.log(response)
     ElMessage.error('获取详细数据失败！')
   });
+  
   common.changeEditDialogVisible(true)
 }
 // 表格保存事件
@@ -454,6 +569,9 @@ function getTableData() {
 
 onMounted(() => {
   getTableData();
+  // 加载下拉框数据
+  deptList();
+  positionList(true,null);
 })
 </script>
 
